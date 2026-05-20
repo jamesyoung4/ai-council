@@ -3,126 +3,285 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AI Council</title>
+  <title>Jambot AI Council</title>
   <style>
     :root {
-      --bg: #fafaf7;
-      --fg: #1a1a1a;
-      --muted: #6b6b6b;
-      --border: #e3e3df;
+      --bg: #fafaf9;
+      --surface: #ffffff;
+      --fg: #0a0a0a;
+      --muted: #71717a;
+      --subtle: #f4f4f5;
+      --border: #e4e4e7;
       --pragmatist: #2563eb;
-      --skeptic: #dc2626;
-      --theorist: #7c3aed;
-      --synth: #16a34a;
+      --skeptic: #b91c1c;
+      --theorist: #6d28d9;
+      --synth: #047857;
     }
     * { box-sizing: border-box; }
+    html, body { height: auto; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-      max-width: 880px;
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif;
+      max-width: 980px;
       margin: 0 auto;
-      padding: 2rem 1.25rem 4rem;
+      padding: 3rem 1.5rem 5rem;
       background: var(--bg);
       color: var(--fg);
       line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
     }
-    h1 { margin: 0 0 0.25rem; font-weight: 600; letter-spacing: -0.01em; }
-    .subtitle { color: var(--muted); margin: 0 0 1.5rem; font-size: 0.95rem; }
-    form { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; }
+
+    /* Header / brand */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+    header .mark {
+      flex: 0 0 auto;
+      width: 56px;
+      height: 56px;
+    }
+    header h1 {
+      font-size: 1.85rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      margin: 0;
+      line-height: 1.1;
+    }
+    header .tagline {
+      margin: 0.25rem 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    /* Form */
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+      padding: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
     textarea {
       width: 100%;
-      min-height: 96px;
-      padding: 0.75rem;
+      min-height: 88px;
+      padding: 0.5rem;
       font-family: inherit;
       font-size: 1rem;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: white;
+      line-height: 1.5;
+      border: none;
+      background: transparent;
+      color: var(--fg);
       resize: vertical;
     }
-    textarea:focus { outline: 2px solid var(--fg); outline-offset: -1px; }
+    textarea:focus { outline: none; }
+    textarea::placeholder { color: var(--muted); }
+    form .row {
+      display: flex;
+      justify-content: flex-end;
+    }
     button {
-      align-self: flex-start;
-      padding: 0.55rem 1.1rem;
+      padding: 0.6rem 1.25rem;
       font-size: 0.95rem;
-      font-weight: 500;
+      font-weight: 600;
+      font-family: inherit;
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
       background: var(--fg);
       color: white;
       cursor: pointer;
+      transition: background 120ms ease, transform 80ms ease;
     }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .round { margin: 1.75rem 0 0.5rem; }
+    button:hover:not(:disabled) { background: #27272a; }
+    button:active:not(:disabled) { transform: translateY(1px); }
+    button:disabled { opacity: 0.55; cursor: progress; }
+
+    /* Round sections */
+    .round {
+      margin: 2rem 0 0;
+      animation: slideIn 280ms ease;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
     .round-header {
-      font-size: 0.8rem;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.85rem;
     }
-    .agents { display: grid; gap: 0.75rem; }
+    .round-num {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      background: var(--subtle);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+    }
+    .round-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--fg);
+    }
+
+    /* Agent grid */
+    .agents { display: grid; gap: 0.85rem; }
     @media (min-width: 760px) {
       .agents { grid-template-columns: repeat(3, 1fr); }
     }
     .agent {
+      position: relative;
       border: 1px solid var(--border);
-      border-top: 3px solid var(--border);
-      border-radius: 6px;
-      padding: 0.65rem 0.85rem 0.85rem;
-      background: white;
-      min-height: 4rem;
+      border-radius: 10px;
+      padding: 0.95rem 1rem 1.1rem;
+      background: var(--surface);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+      transition: box-shadow 200ms ease;
+      animation: cardIn 220ms ease;
     }
-    .agent.Pragmatist { border-top-color: var(--pragmatist); }
-    .agent.Skeptic { border-top-color: var(--skeptic); }
-    .agent.Theorist { border-top-color: var(--theorist); }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .agent::before {
+      content: "";
+      position: absolute;
+      top: -1px; left: -1px; right: -1px;
+      height: 3px;
+      background: var(--border);
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
+    }
+    .agent.Pragmatist::before { background: var(--pragmatist); }
+    .agent.Skeptic::before { background: var(--skeptic); }
+    .agent.Theorist::before { background: var(--theorist); }
+    .agent.streaming { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); }
+
     .agent-name {
-      font-weight: 600;
-      font-size: 0.85rem;
-      margin-bottom: 0.4rem;
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 0.6rem;
     }
     .agent.Pragmatist .agent-name { color: var(--pragmatist); }
     .agent.Skeptic .agent-name { color: var(--skeptic); }
     .agent.Theorist .agent-name { color: var(--theorist); }
+
     .agent-text {
       white-space: pre-wrap;
-      font-size: 0.92rem;
+      font-size: 0.94rem;
+      line-height: 1.6;
+      color: #18181b;
     }
-    .agent-text:empty::after {
+    .agent-text:empty::before {
       content: "thinking…";
       color: var(--muted);
       font-style: italic;
     }
+
+    /* Streaming caret */
+    .agent.streaming .agent-text::after {
+      content: "";
+      display: inline-block;
+      width: 2px;
+      height: 0.95em;
+      background: currentColor;
+      margin-left: 2px;
+      vertical-align: text-bottom;
+      animation: blink 0.95s steps(2, end) infinite;
+    }
+    .agent.Pragmatist.streaming .agent-text::after { background: var(--pragmatist); }
+    .agent.Skeptic.streaming .agent-text::after { background: var(--skeptic); }
+    .agent.Theorist.streaming .agent-text::after { background: var(--theorist); }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* Synthesis */
     .synthesis {
       margin-top: 2.5rem;
-      padding: 1.25rem 1.25rem 1.5rem;
-      border: 1px solid var(--synth);
-      border-left-width: 4px;
-      border-radius: 6px;
-      background: #f0fdf4;
+      padding: 1.5rem 1.75rem 1.75rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: linear-gradient(180deg, #ecfdf5 0%, #ffffff 60%);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+      animation: slideIn 280ms ease;
+    }
+    .synthesis-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.6rem;
+    }
+    .synthesis-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--synth);
+      background: rgba(4, 120, 87, 0.1);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
     }
     .synthesis h2 {
-      margin: 0 0 0.5rem;
-      font-size: 1rem;
-      color: var(--synth);
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin: 0;
+      color: var(--fg);
+      letter-spacing: -0.01em;
     }
-    .synthesis .agent-text { font-size: 0.97rem; }
+    .synthesis .agent-text { font-size: 1rem; color: #18181b; }
+    .synthesis.streaming .agent-text::after {
+      content: "";
+      display: inline-block;
+      width: 2px;
+      height: 0.95em;
+      background: var(--synth);
+      margin-left: 2px;
+      vertical-align: text-bottom;
+      animation: blink 0.95s steps(2, end) infinite;
+    }
+
     .error {
-      margin-top: 1rem;
-      padding: 0.75rem 1rem;
-      border: 1px solid #dc2626;
-      border-radius: 6px;
+      margin-top: 1.25rem;
+      padding: 0.85rem 1rem;
+      border: 1px solid #fca5a5;
+      border-left: 3px solid #dc2626;
+      border-radius: 8px;
       background: #fef2f2;
       color: #991b1b;
-      font-size: 0.9rem;
+      font-size: 0.92rem;
+    }
+
+    footer {
+      margin-top: 3rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <h1>AI Council</h1>
-  <p class="subtitle">Three Claude agents deliberate, then a fourth synthesizes.</p>
+  <header>
+    <svg class="mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle cx="20" cy="7" r="4" fill="#2563eb" />
+      <circle cx="7" cy="29" r="4" fill="#b91c1c" />
+      <circle cx="33" cy="29" r="4" fill="#6d28d9" />
+      <circle cx="20" cy="22" r="3" fill="#047857" />
+      <path d="M 20 7 L 7 29 M 20 7 L 33 29 M 7 29 L 33 29"
+            stroke="#e4e4e7" stroke-width="0.6" fill="none" />
+    </svg>
+    <div>
+      <h1>Jambot AI Council</h1>
+      <p class="tagline">Three AI minds deliberate. A fourth synthesizes.</p>
+    </div>
+  </header>
 
   <form id="form">
     <textarea
@@ -130,10 +289,14 @@
       placeholder="Ask the council something worth deliberating on…"
       required
     ></textarea>
-    <button type="submit" id="submit">Ask the council</button>
+    <div class="row">
+      <button type="submit" id="submit">Convene the council</button>
+    </div>
   </form>
 
   <div id="output"></div>
+
+  <footer>powered by DeepSeek · streaming live</footer>
 
   <script>
     const form = document.getElementById("form");
@@ -180,7 +343,7 @@
         showError(err.message || String(err));
       } finally {
         submit.disabled = false;
-        submit.textContent = "Ask the council";
+        submit.textContent = "Convene the council";
       }
     });
 
@@ -195,8 +358,14 @@
 
       const header = document.createElement("div");
       header.className = "round-header";
-      header.textContent =
-        round === 0 ? "Opening answers" : `Critique round ${round}`;
+      const num = document.createElement("span");
+      num.className = "round-num";
+      num.textContent = round === 0 ? "ROUND 1" : `ROUND ${round + 1}`;
+      const title = document.createElement("span");
+      title.className = "round-title";
+      title.textContent = round === 0 ? "Opening positions" : "Critique & revise";
+      header.appendChild(num);
+      header.appendChild(title);
       el.appendChild(header);
 
       const grid = document.createElement("div");
@@ -210,7 +379,7 @@
     function ensureAgent(round, agent) {
       const id = `agent-${round}-${agent}`;
       let el = document.getElementById(id);
-      if (el) return el.querySelector(".agent-text");
+      if (el) return el;
 
       const grid = ensureRound(round);
       el = document.createElement("article");
@@ -218,18 +387,24 @@
       el.className = `agent ${agent}`;
       el.innerHTML = `<div class="agent-name">${agent}</div><div class="agent-text"></div>`;
       grid.appendChild(el);
-      return el.querySelector(".agent-text");
+      return el;
     }
 
     function ensureSynthesis() {
       let el = document.getElementById("synthesis");
-      if (el) return el.querySelector(".agent-text");
+      if (el) return el;
       el = document.createElement("section");
       el.id = "synthesis";
-      el.className = "synthesis";
-      el.innerHTML = `<h2>Synthesis</h2><div class="agent-text"></div>`;
+      el.className = "synthesis streaming";
+      el.innerHTML = `
+        <div class="synthesis-header">
+          <span class="synthesis-badge">SYNTHESIS</span>
+          <h2>Final answer</h2>
+        </div>
+        <div class="agent-text"></div>
+      `;
       output.appendChild(el);
-      return el.querySelector(".agent-text");
+      return el;
     }
 
     function showError(msg) {
@@ -241,12 +416,19 @@
 
     function handleEvent(event) {
       switch (event.type) {
-        case "agent_start":
-          ensureAgent(event.round, event.agent);
+        case "agent_start": {
+          const el = ensureAgent(event.round, event.agent);
+          el.classList.add("streaming");
           break;
+        }
         case "agent_delta": {
           const el = ensureAgent(event.round, event.agent);
-          el.textContent += event.text;
+          el.querySelector(".agent-text").textContent += event.text;
+          break;
+        }
+        case "agent_done": {
+          const el = ensureAgent(event.round, event.agent);
+          el.classList.remove("streaming");
           break;
         }
         case "synthesis_start":
@@ -254,7 +436,12 @@
           break;
         case "synthesis_delta": {
           const el = ensureSynthesis();
-          el.textContent += event.text;
+          el.querySelector(".agent-text").textContent += event.text;
+          break;
+        }
+        case "done": {
+          const synth = document.getElementById("synthesis");
+          if (synth) synth.classList.remove("streaming");
           break;
         }
         case "error":
