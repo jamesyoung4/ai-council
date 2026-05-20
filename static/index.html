@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Council</title>
+  <style>
+    :root {
+      --bg: #fafaf7;
+      --fg: #1a1a1a;
+      --muted: #6b6b6b;
+      --border: #e3e3df;
+      --pragmatist: #2563eb;
+      --skeptic: #dc2626;
+      --theorist: #7c3aed;
+      --synth: #16a34a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.55;
+    }
+    h1 { margin: 0 0 0.25rem; font-weight: 600; letter-spacing: -0.01em; }
+    .subtitle { color: var(--muted); margin: 0 0 1.5rem; font-size: 0.95rem; }
+    form { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; }
+    textarea {
+      width: 100%;
+      min-height: 96px;
+      padding: 0.75rem;
+      font-family: inherit;
+      font-size: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: white;
+      resize: vertical;
+    }
+    textarea:focus { outline: 2px solid var(--fg); outline-offset: -1px; }
+    button {
+      align-self: flex-start;
+      padding: 0.55rem 1.1rem;
+      font-size: 0.95rem;
+      font-weight: 500;
+      border: none;
+      border-radius: 6px;
+      background: var(--fg);
+      color: white;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .round { margin: 1.75rem 0 0.5rem; }
+    .round-header {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    .agents { display: grid; gap: 0.75rem; }
+    @media (min-width: 760px) {
+      .agents { grid-template-columns: repeat(3, 1fr); }
+    }
+    .agent {
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--border);
+      border-radius: 6px;
+      padding: 0.65rem 0.85rem 0.85rem;
+      background: white;
+      min-height: 4rem;
+    }
+    .agent.Pragmatist { border-top-color: var(--pragmatist); }
+    .agent.Skeptic { border-top-color: var(--skeptic); }
+    .agent.Theorist { border-top-color: var(--theorist); }
+    .agent-name {
+      font-weight: 600;
+      font-size: 0.85rem;
+      margin-bottom: 0.4rem;
+    }
+    .agent.Pragmatist .agent-name { color: var(--pragmatist); }
+    .agent.Skeptic .agent-name { color: var(--skeptic); }
+    .agent.Theorist .agent-name { color: var(--theorist); }
+    .agent-text {
+      white-space: pre-wrap;
+      font-size: 0.92rem;
+    }
+    .agent-text:empty::after {
+      content: "thinking…";
+      color: var(--muted);
+      font-style: italic;
+    }
+    .synthesis {
+      margin-top: 2.5rem;
+      padding: 1.25rem 1.25rem 1.5rem;
+      border: 1px solid var(--synth);
+      border-left-width: 4px;
+      border-radius: 6px;
+      background: #f0fdf4;
+    }
+    .synthesis h2 {
+      margin: 0 0 0.5rem;
+      font-size: 1rem;
+      color: var(--synth);
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .synthesis .agent-text { font-size: 0.97rem; }
+    .error {
+      margin-top: 1rem;
+      padding: 0.75rem 1rem;
+      border: 1px solid #dc2626;
+      border-radius: 6px;
+      background: #fef2f2;
+      color: #991b1b;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>AI Council</h1>
+  <p class="subtitle">Three Claude agents deliberate, then a fourth synthesizes.</p>
+
+  <form id="form">
+    <textarea
+      id="question"
+      placeholder="Ask the council something worth deliberating on…"
+      required
+    ></textarea>
+    <button type="submit" id="submit">Ask the council</button>
+  </form>
+
+  <div id="output"></div>
+
+  <script>
+    const form = document.getElementById("form");
+    const submit = document.getElementById("submit");
+    const output = document.getElementById("output");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const question = document.getElementById("question").value.trim();
+      if (!question) return;
+
+      output.innerHTML = "";
+      submit.disabled = true;
+      submit.textContent = "Deliberating…";
+
+      try {
+        const resp = await fetch("/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question }),
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          let idx;
+          while ((idx = buffer.indexOf("\n\n")) !== -1) {
+            const frame = buffer.slice(0, idx);
+            buffer = buffer.slice(idx + 2);
+            for (const line of frame.split("\n")) {
+              if (line.startsWith("data: ")) {
+                handleEvent(JSON.parse(line.slice(6)));
+              }
+            }
+          }
+        }
+      } catch (err) {
+        showError(err.message || String(err));
+      } finally {
+        submit.disabled = false;
+        submit.textContent = "Ask the council";
+      }
+    });
+
+    function ensureRound(round) {
+      const id = `round-${round}`;
+      let el = document.getElementById(id);
+      if (el) return el.querySelector(".agents");
+
+      el = document.createElement("section");
+      el.id = id;
+      el.className = "round";
+
+      const header = document.createElement("div");
+      header.className = "round-header";
+      header.textContent =
+        round === 0 ? "Opening answers" : `Critique round ${round}`;
+      el.appendChild(header);
+
+      const grid = document.createElement("div");
+      grid.className = "agents";
+      el.appendChild(grid);
+
+      output.appendChild(el);
+      return grid;
+    }
+
+    function ensureAgent(round, agent) {
+      const id = `agent-${round}-${agent}`;
+      let el = document.getElementById(id);
+      if (el) return el.querySelector(".agent-text");
+
+      const grid = ensureRound(round);
+      el = document.createElement("article");
+      el.id = id;
+      el.className = `agent ${agent}`;
+      el.innerHTML = `<div class="agent-name">${agent}</div><div class="agent-text"></div>`;
+      grid.appendChild(el);
+      return el.querySelector(".agent-text");
+    }
+
+    function ensureSynthesis() {
+      let el = document.getElementById("synthesis");
+      if (el) return el.querySelector(".agent-text");
+      el = document.createElement("section");
+      el.id = "synthesis";
+      el.className = "synthesis";
+      el.innerHTML = `<h2>Synthesis</h2><div class="agent-text"></div>`;
+      output.appendChild(el);
+      return el.querySelector(".agent-text");
+    }
+
+    function showError(msg) {
+      const el = document.createElement("div");
+      el.className = "error";
+      el.textContent = `Error: ${msg}`;
+      output.appendChild(el);
+    }
+
+    function handleEvent(event) {
+      switch (event.type) {
+        case "agent_start":
+          ensureAgent(event.round, event.agent);
+          break;
+        case "agent_delta": {
+          const el = ensureAgent(event.round, event.agent);
+          el.textContent += event.text;
+          break;
+        }
+        case "synthesis_start":
+          ensureSynthesis();
+          break;
+        case "synthesis_delta": {
+          const el = ensureSynthesis();
+          el.textContent += event.text;
+          break;
+        }
+        case "error":
+          showError(event.message);
+          break;
+      }
+    }
+  </script>
+</body>
+</html>
