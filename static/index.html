@@ -6,17 +6,20 @@
   <title>Jambot AI Council</title>
   <style>
     :root {
-      --bg: #fafaf9;
-      --surface: #ffffff;
-      --fg: #0a0a0a;
-      --muted: #71717a;
-      --subtle: #f4f4f5;
-      --border: #e4e4e7;
-      --pragmatist: #2563eb;
-      --skeptic: #b91c1c;
-      --theorist: #6d28d9;
-      --synth: #047857;
+      --bg: #0a0a0b;
+      --surface: #18181b;
+      --surface-hi: #1f1f23;
+      --fg: #fafafa;
+      --muted: #a1a1aa;
+      --subtle: #27272a;
+      --border: #27272a;
+      --border-strong: #3f3f46;
+      --pragmatist: #60a5fa;
+      --skeptic: #f87171;
+      --theorist: #a78bfa;
+      --synth: #34d399;
     }
+    @media (prefers-color-scheme: dark) { /* same — already dark */ }
     * { box-sizing: border-box; }
     html, body { height: auto; }
     body {
@@ -65,7 +68,9 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 12px;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+    form:focus-within {
+      border-color: var(--border-strong);
     }
     textarea {
       width: 100%;
@@ -93,11 +98,11 @@
       border: none;
       border-radius: 8px;
       background: var(--fg);
-      color: white;
+      color: var(--bg);
       cursor: pointer;
       transition: background 120ms ease, transform 80ms ease;
     }
-    button:hover:not(:disabled) { background: #27272a; }
+    button:hover:not(:disabled) { background: #e4e4e7; }
     button:active:not(:disabled) { transform: translateY(1px); }
     button:disabled { opacity: 0.55; cursor: progress; }
 
@@ -142,10 +147,10 @@
       border-radius: 10px;
       padding: 0.95rem 1rem 1.1rem;
       background: var(--surface);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-      transition: box-shadow 200ms ease;
+      transition: border-color 200ms ease, background 200ms ease;
       animation: cardIn 220ms ease;
     }
+    .agent.streaming { background: var(--surface-hi); border-color: var(--border-strong); }
     @keyframes cardIn {
       from { opacity: 0; transform: translateY(4px); }
       to { opacity: 1; transform: translateY(0); }
@@ -162,8 +167,6 @@
     .agent.Pragmatist::before { background: var(--pragmatist); }
     .agent.Skeptic::before { background: var(--skeptic); }
     .agent.Theorist::before { background: var(--theorist); }
-    .agent.streaming { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); }
-
     .agent-name {
       display: inline-block;
       font-size: 0.75rem;
@@ -180,7 +183,7 @@
       white-space: pre-wrap;
       font-size: 0.94rem;
       line-height: 1.6;
-      color: #18181b;
+      color: #e4e4e7;
     }
     .agent-text:empty::before {
       content: "thinking…";
@@ -208,10 +211,11 @@
     .synthesis {
       margin-top: 2.5rem;
       padding: 1.5rem 1.75rem 1.75rem;
-      border: 1px solid var(--border);
+      border: 1px solid var(--border-strong);
       border-radius: 12px;
-      background: linear-gradient(180deg, #ecfdf5 0%, #ffffff 60%);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+      background:
+        radial-gradient(ellipse at top, rgba(52, 211, 153, 0.08) 0%, transparent 60%),
+        var(--surface);
       animation: slideIn 280ms ease;
     }
     .synthesis-header {
@@ -225,7 +229,7 @@
       font-weight: 700;
       letter-spacing: 0.08em;
       color: var(--synth);
-      background: rgba(4, 120, 87, 0.1);
+      background: rgba(52, 211, 153, 0.12);
       padding: 0.2rem 0.5rem;
       border-radius: 4px;
     }
@@ -236,7 +240,7 @@
       color: var(--fg);
       letter-spacing: -0.01em;
     }
-    .synthesis .agent-text { font-size: 1rem; color: #18181b; }
+    .synthesis .agent-text { font-size: 1rem; color: #f4f4f5; }
     .synthesis.streaming .agent-text::after {
       content: "";
       display: inline-block;
@@ -251,11 +255,11 @@
     .error {
       margin-top: 1.25rem;
       padding: 0.85rem 1rem;
-      border: 1px solid #fca5a5;
-      border-left: 3px solid #dc2626;
+      border: 1px solid #7f1d1d;
+      border-left: 3px solid #f87171;
       border-radius: 8px;
-      background: #fef2f2;
-      color: #991b1b;
+      background: rgba(220, 38, 38, 0.08);
+      color: #fca5a5;
       font-size: 0.92rem;
     }
 
@@ -270,12 +274,12 @@
 <body>
   <header>
     <svg class="mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <circle cx="20" cy="7" r="4" fill="#2563eb" />
-      <circle cx="7" cy="29" r="4" fill="#b91c1c" />
-      <circle cx="33" cy="29" r="4" fill="#6d28d9" />
-      <circle cx="20" cy="22" r="3" fill="#047857" />
+      <circle cx="20" cy="7" r="4" fill="#60a5fa" />
+      <circle cx="7" cy="29" r="4" fill="#f87171" />
+      <circle cx="33" cy="29" r="4" fill="#a78bfa" />
+      <circle cx="20" cy="22" r="3" fill="#34d399" />
       <path d="M 20 7 L 7 29 M 20 7 L 33 29 M 7 29 L 33 29"
-            stroke="#e4e4e7" stroke-width="0.6" fill="none" />
+            stroke="#3f3f46" stroke-width="0.6" fill="none" />
     </svg>
     <div>
       <h1>Jambot AI Council</h1>
