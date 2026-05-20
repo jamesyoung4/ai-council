@@ -1,4 +1,6 @@
 fastapi==0.136.1
 openai==2.37.0
+pypdf==6.11.0
 python-dotenv==1.2.2
+python-multipart==0.0.29
 uvicorn==0.47.0

@@ -7,6 +7,7 @@
   <style>
     :root {
       --bg: #0a0a0b;
+      --sidebar: #111113;
       --surface: #18181b;
       --surface-hi: #1f1f23;
       --fg: #fafafa;
@@ -19,170 +20,244 @@
       --theorist: #a78bfa;
       --synth: #34d399;
     }
-    @media (prefers-color-scheme: dark) { /* same — already dark */ }
     * { box-sizing: border-box; }
-    html, body { height: auto; }
+    html, body { height: 100%; margin: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif;
-      max-width: 980px;
-      margin: 0 auto;
-      padding: 3rem 1.5rem 5rem;
       background: var(--bg);
       color: var(--fg);
       line-height: 1.55;
       -webkit-font-smoothing: antialiased;
+      overflow: hidden;
     }
 
-    /* Header / brand */
-    header {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin-bottom: 2.5rem;
+    .app {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      height: 100vh;
     }
-    header .mark {
-      flex: 0 0 auto;
-      width: 56px;
-      height: 56px;
-    }
-    header h1 {
-      font-size: 1.85rem;
-      font-weight: 700;
-      letter-spacing: -0.025em;
-      margin: 0;
-      line-height: 1.1;
-    }
-    header .tagline {
-      margin: 0.25rem 0 0;
-      color: var(--muted);
-      font-size: 0.95rem;
+    @media (max-width: 720px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .sidebar.open { display: flex; position: absolute; inset: 0; width: 280px; z-index: 10; }
     }
 
-    /* Form */
-    form {
+    /* Sidebar */
+    .sidebar {
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
-      margin-bottom: 2rem;
-      padding: 1rem;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
+      background: var(--sidebar);
+      border-right: 1px solid var(--border);
+      overflow: hidden;
     }
-    form:focus-within {
-      border-color: var(--border-strong);
-    }
-    textarea {
-      width: 100%;
-      min-height: 88px;
-      padding: 0.5rem;
-      font-family: inherit;
-      font-size: 1rem;
-      line-height: 1.5;
-      border: none;
-      background: transparent;
-      color: var(--fg);
-      resize: vertical;
-    }
-    textarea:focus { outline: none; }
-    textarea::placeholder { color: var(--muted); }
-    form .row {
-      display: flex;
-      justify-content: flex-end;
-    }
-    button {
-      padding: 0.6rem 1.25rem;
-      font-size: 0.95rem;
-      font-weight: 600;
-      font-family: inherit;
-      border: none;
-      border-radius: 8px;
-      background: var(--fg);
-      color: var(--bg);
-      cursor: pointer;
-      transition: background 120ms ease, transform 80ms ease;
-    }
-    button:hover:not(:disabled) { background: #e4e4e7; }
-    button:active:not(:disabled) { transform: translateY(1px); }
-    button:disabled { opacity: 0.55; cursor: progress; }
-
-    /* Round sections */
-    .round {
-      margin: 2rem 0 0;
-      animation: slideIn 280ms ease;
-    }
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .round-header {
+    .sidebar-header {
+      padding: 1.25rem 1rem 0.75rem;
       display: flex;
       align-items: center;
       gap: 0.6rem;
-      margin-bottom: 0.85rem;
+    }
+    .sidebar-header svg { flex: 0 0 auto; width: 28px; height: 28px; }
+    .brand-text { font-size: 0.95rem; font-weight: 700; letter-spacing: -0.01em; }
+    .brand-tag { font-size: 0.72rem; color: var(--muted); }
+
+    .new-btn {
+      margin: 0.5rem 0.75rem 0.75rem;
+      padding: 0.55rem 0.85rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      font-family: inherit;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--fg);
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: background 100ms ease;
+    }
+    .new-btn:hover { background: var(--surface-hi); }
+
+    .conv-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 0.5rem 1rem;
+    }
+    .conv-item {
+      position: relative;
+      padding: 0.55rem 0.65rem;
+      margin: 0.15rem 0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      color: var(--fg);
+      transition: background 100ms ease;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .conv-item:hover { background: var(--surface); }
+    .conv-item.active { background: var(--surface-hi); }
+    .conv-title {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .conv-delete {
+      opacity: 0;
+      padding: 0.15rem 0.3rem;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      line-height: 1;
+      border-radius: 4px;
+    }
+    .conv-item:hover .conv-delete { opacity: 1; }
+    .conv-delete:hover { color: var(--skeptic); background: rgba(248, 113, 113, 0.1); }
+    .empty-list {
+      padding: 1rem 0.75rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    /* Main pane */
+    .main {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      min-width: 0;
+    }
+    .conversation {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem 1rem;
+    }
+    @media (max-width: 720px) {
+      .conversation { padding: 1rem; }
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--muted);
+      gap: 0.5rem;
+      text-align: center;
+    }
+    .empty-state h2 {
+      color: var(--fg);
+      font-size: 1.4rem;
+      margin: 0;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .empty-state p { margin: 0; font-size: 0.95rem; max-width: 30rem; }
+
+    .turn { margin-bottom: 2.5rem; animation: slideIn 280ms ease; }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .user-msg {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      margin-bottom: 1rem;
+    }
+    .user-bubble {
+      max-width: 80%;
+      padding: 0.7rem 1rem;
+      background: var(--surface-hi);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      border-bottom-right-radius: 4px;
+      white-space: pre-wrap;
+      font-size: 0.95rem;
+    }
+    .user-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin-top: 0.4rem;
+      justify-content: flex-end;
+      max-width: 80%;
+    }
+    .chip {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.55rem;
+      background: rgba(96, 165, 250, 0.12);
+      color: #93c5fd;
+      border: 1px solid rgba(96, 165, 250, 0.3);
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .round-header {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      margin: 1.25rem 0 0.7rem;
     }
     .round-num {
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       font-weight: 700;
       letter-spacing: 0.08em;
       color: var(--muted);
       background: var(--subtle);
-      padding: 0.2rem 0.5rem;
+      padding: 0.18rem 0.45rem;
       border-radius: 4px;
     }
-    .round-title {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: var(--fg);
-    }
+    .round-title { font-size: 0.88rem; font-weight: 600; color: var(--muted); }
 
-    /* Agent grid */
-    .agents { display: grid; gap: 0.85rem; }
-    @media (min-width: 760px) {
-      .agents { grid-template-columns: repeat(3, 1fr); }
-    }
+    .agents { display: grid; gap: 0.75rem; }
+    @media (min-width: 760px) { .agents { grid-template-columns: repeat(3, 1fr); } }
     .agent {
       position: relative;
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 0.95rem 1rem 1.1rem;
+      padding: 0.85rem 0.95rem 1rem;
       background: var(--surface);
       transition: border-color 200ms ease, background 200ms ease;
-      animation: cardIn 220ms ease;
-    }
-    .agent.streaming { background: var(--surface-hi); border-color: var(--border-strong); }
-    @keyframes cardIn {
-      from { opacity: 0; transform: translateY(4px); }
-      to { opacity: 1; transform: translateY(0); }
+      animation: slideIn 220ms ease;
     }
     .agent::before {
       content: "";
       position: absolute;
       top: -1px; left: -1px; right: -1px;
       height: 3px;
-      background: var(--border);
+      background: var(--border-strong);
       border-top-left-radius: 10px;
       border-top-right-radius: 10px;
     }
     .agent.Pragmatist::before { background: var(--pragmatist); }
     .agent.Skeptic::before { background: var(--skeptic); }
     .agent.Theorist::before { background: var(--theorist); }
+    .agent.streaming { background: var(--surface-hi); border-color: var(--border-strong); }
     .agent-name {
       display: inline-block;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       font-weight: 700;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.07em;
       text-transform: uppercase;
-      margin-bottom: 0.6rem;
+      margin-bottom: 0.5rem;
     }
     .agent.Pragmatist .agent-name { color: var(--pragmatist); }
     .agent.Skeptic .agent-name { color: var(--skeptic); }
     .agent.Theorist .agent-name { color: var(--theorist); }
-
     .agent-text {
       white-space: pre-wrap;
-      font-size: 0.94rem;
-      line-height: 1.6;
+      font-size: 0.9rem;
+      line-height: 1.55;
       color: #e4e4e7;
     }
     .agent-text:empty::before {
@@ -190,13 +265,11 @@
       color: var(--muted);
       font-style: italic;
     }
-
-    /* Streaming caret */
     .agent.streaming .agent-text::after {
       content: "";
       display: inline-block;
       width: 2px;
-      height: 0.95em;
+      height: 0.9em;
       background: currentColor;
       margin-left: 2px;
       vertical-align: text-bottom;
@@ -207,40 +280,32 @@
     .agent.Theorist.streaming .agent-text::after { background: var(--theorist); }
     @keyframes blink { 50% { opacity: 0; } }
 
-    /* Synthesis */
     .synthesis {
-      margin-top: 2.5rem;
-      padding: 1.5rem 1.75rem 1.75rem;
+      margin-top: 1.25rem;
+      padding: 1.25rem 1.4rem 1.4rem;
       border: 1px solid var(--border-strong);
       border-radius: 12px;
       background:
         radial-gradient(ellipse at top, rgba(52, 211, 153, 0.08) 0%, transparent 60%),
         var(--surface);
-      animation: slideIn 280ms ease;
     }
-    .synthesis-header {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      margin-bottom: 0.6rem;
-    }
+    .synthesis-header { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.5rem; }
     .synthesis-badge {
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       font-weight: 700;
       letter-spacing: 0.08em;
       color: var(--synth);
       background: rgba(52, 211, 153, 0.12);
-      padding: 0.2rem 0.5rem;
+      padding: 0.18rem 0.45rem;
       border-radius: 4px;
     }
     .synthesis h2 {
-      font-size: 1.15rem;
+      font-size: 1.05rem;
       font-weight: 700;
       margin: 0;
-      color: var(--fg);
       letter-spacing: -0.01em;
     }
-    .synthesis .agent-text { font-size: 1rem; color: #f4f4f5; }
+    .synthesis .agent-text { font-size: 0.95rem; color: #f4f4f5; }
     .synthesis.streaming .agent-text::after {
       content: "";
       display: inline-block;
@@ -252,153 +317,333 @@
       animation: blink 0.95s steps(2, end) infinite;
     }
 
+    /* Input bar */
+    .input-bar {
+      padding: 0.75rem 1.5rem 1.25rem;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+    }
+    .input-wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.5rem 0.5rem 0.5rem 0.85rem;
+      transition: border-color 150ms ease;
+    }
+    .input-wrap:focus-within { border-color: var(--border-strong); }
+    .pending-files {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      padding: 0.25rem 0 0.5rem;
+    }
+    .pending-files:empty { display: none; }
+    .pending-chip {
+      font-size: 0.78rem;
+      padding: 0.25rem 0.55rem 0.25rem 0.6rem;
+      background: rgba(96, 165, 250, 0.1);
+      color: #93c5fd;
+      border: 1px solid rgba(96, 165, 250, 0.25);
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .pending-chip button {
+      background: none;
+      border: none;
+      color: inherit;
+      padding: 0;
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+    .pending-chip button:hover { opacity: 1; }
+
+    .input-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 0.5rem;
+    }
+    textarea {
+      flex: 1;
+      min-height: 38px;
+      max-height: 220px;
+      padding: 0.5rem 0;
+      font-family: inherit;
+      font-size: 0.95rem;
+      line-height: 1.45;
+      border: none;
+      background: transparent;
+      color: var(--fg);
+      resize: none;
+    }
+    textarea:focus { outline: none; }
+    textarea::placeholder { color: var(--muted); }
+
+    .icon-btn {
+      flex: 0 0 auto;
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 100ms ease, color 100ms ease;
+    }
+    .icon-btn:hover { background: var(--subtle); color: var(--fg); }
+    .icon-btn svg { width: 18px; height: 18px; }
+
+    .send-btn {
+      flex: 0 0 auto;
+      padding: 0.55rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      font-family: inherit;
+      border: none;
+      border-radius: 8px;
+      background: var(--fg);
+      color: var(--bg);
+      cursor: pointer;
+      transition: background 120ms ease, transform 80ms ease;
+    }
+    .send-btn:hover:not(:disabled) { background: #e4e4e7; }
+    .send-btn:active:not(:disabled) { transform: translateY(1px); }
+    .send-btn:disabled { opacity: 0.55; cursor: progress; }
+
     .error {
-      margin-top: 1.25rem;
-      padding: 0.85rem 1rem;
+      margin: 1rem 0;
+      padding: 0.75rem 1rem;
       border: 1px solid #7f1d1d;
       border-left: 3px solid #f87171;
       border-radius: 8px;
       background: rgba(220, 38, 38, 0.08);
       color: #fca5a5;
-      font-size: 0.92rem;
-    }
-
-    footer {
-      margin-top: 3rem;
-      font-size: 0.8rem;
-      color: var(--muted);
-      text-align: center;
+      font-size: 0.9rem;
     }
   </style>
 </head>
 <body>
-  <header>
-    <svg class="mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <circle cx="20" cy="7" r="4" fill="#60a5fa" />
-      <circle cx="7" cy="29" r="4" fill="#f87171" />
-      <circle cx="33" cy="29" r="4" fill="#a78bfa" />
-      <circle cx="20" cy="22" r="3" fill="#34d399" />
-      <path d="M 20 7 L 7 29 M 20 7 L 33 29 M 7 29 L 33 29"
-            stroke="#3f3f46" stroke-width="0.6" fill="none" />
-    </svg>
-    <div>
-      <h1>Jambot AI Council</h1>
-      <p class="tagline">Three AI minds deliberate. A fourth synthesizes.</p>
-    </div>
-  </header>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="20" cy="7" r="4" fill="#60a5fa" />
+          <circle cx="7" cy="29" r="4" fill="#f87171" />
+          <circle cx="33" cy="29" r="4" fill="#a78bfa" />
+          <circle cx="20" cy="22" r="3" fill="#34d399" />
+          <path d="M 20 7 L 7 29 M 20 7 L 33 29 M 7 29 L 33 29"
+                stroke="#3f3f46" stroke-width="0.6" fill="none" />
+        </svg>
+        <div>
+          <div class="brand-text">Jambot AI Council</div>
+          <div class="brand-tag">three minds, one synthesis</div>
+        </div>
+      </div>
+      <button class="new-btn" id="new-btn">
+        <span style="font-size: 1.1rem; line-height: 1;">+</span>
+        <span>New conversation</span>
+      </button>
+      <div class="conv-list" id="conv-list"></div>
+    </aside>
 
-  <form id="form">
-    <textarea
-      id="question"
-      placeholder="Ask the council something worth deliberating on…"
-      required
-    ></textarea>
-    <div class="row">
-      <button type="submit" id="submit">Convene the council</button>
-    </div>
-  </form>
+    <main class="main">
+      <div class="conversation" id="conversation"></div>
 
-  <div id="output"></div>
-
-  <footer>powered by DeepSeek · streaming live</footer>
+      <div class="input-bar">
+        <form class="input-wrap" id="form">
+          <div class="pending-files" id="pending-files"></div>
+          <div class="input-row">
+            <button type="button" class="icon-btn" id="attach-btn" title="Attach files (PDF, text, code)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+              </svg>
+            </button>
+            <input type="file" id="file-input" multiple hidden
+                   accept=".pdf,.txt,.md,.markdown,.csv,.tsv,.json,.yaml,.yml,.toml,.log,.py,.js,.ts,.jsx,.tsx,.html,.css,.go,.rs,.java,.c,.cpp,.h,.sh" />
+            <textarea
+              id="question"
+              placeholder="Ask the council…"
+              rows="1"
+              required
+            ></textarea>
+            <button type="submit" class="send-btn" id="submit">Send</button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
 
   <script>
+    const conversationView = document.getElementById("conversation");
+    const convList = document.getElementById("conv-list");
     const form = document.getElementById("form");
-    const submit = document.getElementById("submit");
-    const output = document.getElementById("output");
+    const questionInput = document.getElementById("question");
+    const submitBtn = document.getElementById("submit");
+    const newBtn = document.getElementById("new-btn");
+    const attachBtn = document.getElementById("attach-btn");
+    const fileInput = document.getElementById("file-input");
+    const pendingFilesEl = document.getElementById("pending-files");
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const question = document.getElementById("question").value.trim();
-      if (!question) return;
+    let currentConversationId = null;
+    let pendingFiles = [];
+    let activeTurn = null;
+    let isStreaming = false;
 
-      output.innerHTML = "";
-      submit.disabled = true;
-      submit.textContent = "Deliberating…";
+    // ---------- Sidebar ----------
 
-      try {
-        const resp = await fetch("/ask", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question }),
-        });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-
-        const reader = resp.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          let idx;
-          while ((idx = buffer.indexOf("\n\n")) !== -1) {
-            const frame = buffer.slice(0, idx);
-            buffer = buffer.slice(idx + 2);
-            for (const line of frame.split("\n")) {
-              if (line.startsWith("data: ")) {
-                handleEvent(JSON.parse(line.slice(6)));
-              }
-            }
-          }
-        }
-      } catch (err) {
-        showError(err.message || String(err));
-      } finally {
-        submit.disabled = false;
-        submit.textContent = "Convene the council";
+    async function loadConversations() {
+      const resp = await fetch("/api/conversations");
+      const list = await resp.json();
+      convList.innerHTML = "";
+      if (!list.length) {
+        convList.innerHTML = '<div class="empty-list">No conversations yet</div>';
+        return;
       }
-    });
+      for (const c of list) {
+        const el = document.createElement("div");
+        el.className = "conv-item";
+        if (c.id === currentConversationId) el.classList.add("active");
+        el.innerHTML = `
+          <span class="conv-title">${escapeHtml(c.title)}</span>
+          <button class="conv-delete" title="Delete">×</button>
+        `;
+        el.querySelector(".conv-title").addEventListener("click", () => loadConversation(c.id));
+        el.querySelector(".conv-delete").addEventListener("click", async (e) => {
+          e.stopPropagation();
+          if (!confirm(`Delete "${c.title}"?`)) return;
+          await fetch(`/api/conversations/${c.id}`, { method: "DELETE" });
+          if (currentConversationId === c.id) {
+            currentConversationId = null;
+            renderEmptyState();
+          }
+          await loadConversations();
+        });
+        convList.appendChild(el);
+      }
+    }
 
-    function ensureRound(round) {
-      const id = `round-${round}`;
-      let el = document.getElementById(id);
-      if (el) return el.querySelector(".agents");
+    async function loadConversation(id) {
+      if (isStreaming) return;
+      const resp = await fetch(`/api/conversations/${id}`);
+      if (!resp.ok) return;
+      const conv = await resp.json();
+      currentConversationId = id;
+      conversationView.innerHTML = "";
+      for (const turn of conv.turns) renderTurn(turn);
+      conversationView.scrollTop = conversationView.scrollHeight;
+      await loadConversations();
+    }
 
-      el = document.createElement("section");
-      el.id = id;
-      el.className = "round";
+    function newConversation() {
+      if (isStreaming) return;
+      currentConversationId = null;
+      activeTurn = null;
+      pendingFiles = [];
+      renderPendingFiles();
+      renderEmptyState();
+      Array.from(convList.querySelectorAll(".conv-item.active"))
+        .forEach((el) => el.classList.remove("active"));
+      questionInput.focus();
+    }
+
+    newBtn.addEventListener("click", newConversation);
+
+    // ---------- Rendering ----------
+
+    function renderEmptyState() {
+      conversationView.innerHTML = `
+        <div class="empty-state">
+          <h2>Convene the council</h2>
+          <p>Ask a question worth deliberating on. Three AI minds will give independent
+             opening takes, critique each other across two rounds, then a fourth produces
+             a synthesis. Attach files for context.</p>
+        </div>
+      `;
+    }
+
+    function escapeHtml(s) {
+      return s.replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+      })[c]);
+    }
+
+    function newTurnEl() {
+      const el = document.createElement("section");
+      el.className = "turn";
+      return el;
+    }
+
+    function renderUserMessage(turnEl, question, attachments) {
+      const wrap = document.createElement("div");
+      wrap.className = "user-msg";
+      const bubble = document.createElement("div");
+      bubble.className = "user-bubble";
+      bubble.textContent = question;
+      wrap.appendChild(bubble);
+      if (attachments && attachments.length) {
+        const chips = document.createElement("div");
+        chips.className = "user-chips";
+        for (const a of attachments) {
+          const c = document.createElement("span");
+          c.className = "chip";
+          c.textContent = a.filename || a.name || "file";
+          chips.appendChild(c);
+        }
+        wrap.appendChild(chips);
+      }
+      turnEl.appendChild(wrap);
+    }
+
+    function ensureRound(turnEl, roundNum) {
+      let r = turnEl.querySelector(`[data-round="${roundNum}"]`);
+      if (r) return r.querySelector(".agents");
+      r = document.createElement("section");
+      r.dataset.round = roundNum;
 
       const header = document.createElement("div");
       header.className = "round-header";
       const num = document.createElement("span");
       num.className = "round-num";
-      num.textContent = round === 0 ? "ROUND 1" : `ROUND ${round + 1}`;
+      num.textContent = roundNum === 0 ? "ROUND 1" : `ROUND ${roundNum + 1}`;
       const title = document.createElement("span");
       title.className = "round-title";
-      title.textContent = round === 0 ? "Opening positions" : "Critique & revise";
+      title.textContent = roundNum === 0 ? "Opening positions" : "Critique & revise";
       header.appendChild(num);
       header.appendChild(title);
-      el.appendChild(header);
+      r.appendChild(header);
 
       const grid = document.createElement("div");
       grid.className = "agents";
-      el.appendChild(grid);
-
-      output.appendChild(el);
+      r.appendChild(grid);
+      turnEl.appendChild(r);
       return grid;
     }
 
-    function ensureAgent(round, agent) {
-      const id = `agent-${round}-${agent}`;
-      let el = document.getElementById(id);
+    function ensureAgent(turnEl, roundNum, agentName) {
+      const grid = ensureRound(turnEl, roundNum);
+      let el = grid.querySelector(`[data-agent="${agentName}"]`);
       if (el) return el;
-
-      const grid = ensureRound(round);
       el = document.createElement("article");
-      el.id = id;
-      el.className = `agent ${agent}`;
-      el.innerHTML = `<div class="agent-name">${agent}</div><div class="agent-text"></div>`;
+      el.dataset.agent = agentName;
+      el.className = `agent ${agentName}`;
+      el.innerHTML = `<div class="agent-name">${agentName}</div><div class="agent-text"></div>`;
       grid.appendChild(el);
       return el;
     }
 
-    function ensureSynthesis() {
-      let el = document.getElementById("synthesis");
+    function ensureSynthesis(turnEl) {
+      let el = turnEl.querySelector(".synthesis");
       if (el) return el;
       el = document.createElement("section");
-      el.id = "synthesis";
       el.className = "synthesis streaming";
       el.innerHTML = `
         <div class="synthesis-header">
@@ -407,7 +652,26 @@
         </div>
         <div class="agent-text"></div>
       `;
-      output.appendChild(el);
+      turnEl.appendChild(el);
+      return el;
+    }
+
+    function renderTurn(turn) {
+      const el = newTurnEl();
+      renderUserMessage(el, turn.user_question, turn.attachments);
+      const rounds = turn.responses || {};
+      for (const [r, agents] of Object.entries(rounds)) {
+        for (const [name, text] of Object.entries(agents)) {
+          const a = ensureAgent(el, parseInt(r), name);
+          a.querySelector(".agent-text").textContent = text;
+        }
+      }
+      if (turn.synthesis) {
+        const s = ensureSynthesis(el);
+        s.classList.remove("streaming");
+        s.querySelector(".agent-text").textContent = turn.synthesis;
+      }
+      conversationView.appendChild(el);
       return el;
     }
 
@@ -415,44 +679,180 @@
       const el = document.createElement("div");
       el.className = "error";
       el.textContent = `Error: ${msg}`;
-      output.appendChild(el);
+      (activeTurn || conversationView).appendChild(el);
+    }
+
+    // ---------- Pending files ----------
+
+    function renderPendingFiles() {
+      pendingFilesEl.innerHTML = "";
+      pendingFiles.forEach((f, i) => {
+        const chip = document.createElement("span");
+        chip.className = "pending-chip";
+        chip.innerHTML = `<span>${escapeHtml(f.name)}</span>`;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = "×";
+        btn.addEventListener("click", () => {
+          pendingFiles.splice(i, 1);
+          renderPendingFiles();
+        });
+        chip.appendChild(btn);
+        pendingFilesEl.appendChild(chip);
+      });
+    }
+
+    attachBtn.addEventListener("click", () => fileInput.click());
+    fileInput.addEventListener("change", (e) => {
+      for (const f of e.target.files) pendingFiles.push(f);
+      fileInput.value = "";
+      renderPendingFiles();
+    });
+
+    // ---------- Auto-grow textarea ----------
+
+    questionInput.addEventListener("input", () => {
+      questionInput.style.height = "auto";
+      questionInput.style.height = Math.min(questionInput.scrollHeight, 220) + "px";
+    });
+    questionInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        form.requestSubmit();
+      }
+    });
+
+    // ---------- Submit ----------
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const question = questionInput.value.trim();
+      if (!question || isStreaming) return;
+
+      // Clear empty state if present
+      const empty = conversationView.querySelector(".empty-state");
+      if (empty) empty.remove();
+
+      // Create conversation if needed
+      if (!currentConversationId) {
+        const r = await fetch("/api/conversations", { method: "POST" });
+        const { id } = await r.json();
+        currentConversationId = id;
+      }
+
+      // Render user message + new active turn
+      activeTurn = newTurnEl();
+      renderUserMessage(activeTurn, question, pendingFiles.map((f) => ({ filename: f.name })));
+      conversationView.appendChild(activeTurn);
+      conversationView.scrollTop = conversationView.scrollHeight;
+
+      // Reset inputs
+      const filesToSend = pendingFiles;
+      pendingFiles = [];
+      renderPendingFiles();
+      questionInput.value = "";
+      questionInput.style.height = "auto";
+
+      isStreaming = true;
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Thinking…";
+
+      try {
+        const fd = new FormData();
+        fd.append("question", question);
+        for (const f of filesToSend) fd.append("files", f);
+
+        const resp = await fetch(`/api/conversations/${currentConversationId}/ask`, {
+          method: "POST",
+          body: fd,
+        });
+        if (!resp.ok) {
+          const errText = await resp.text().catch(() => `HTTP ${resp.status}`);
+          throw new Error(errText);
+        }
+
+        await streamResponse(resp);
+      } catch (err) {
+        showError(err.message || String(err));
+      } finally {
+        isStreaming = false;
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Send";
+        await loadConversations();
+        activeTurn = null;
+      }
+    });
+
+    async function streamResponse(resp) {
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let idx;
+        while ((idx = buffer.indexOf("\n\n")) !== -1) {
+          const frame = buffer.slice(0, idx);
+          buffer = buffer.slice(idx + 2);
+          for (const line of frame.split("\n")) {
+            if (line.startsWith("data: ")) {
+              handleEvent(JSON.parse(line.slice(6)));
+            }
+          }
+        }
+        conversationView.scrollTop = conversationView.scrollHeight;
+      }
     }
 
     function handleEvent(event) {
+      if (!activeTurn) return;
       switch (event.type) {
         case "agent_start": {
-          const el = ensureAgent(event.round, event.agent);
+          const el = ensureAgent(activeTurn, event.round, event.agent);
           el.classList.add("streaming");
           break;
         }
         case "agent_delta": {
-          const el = ensureAgent(event.round, event.agent);
+          const el = ensureAgent(activeTurn, event.round, event.agent);
           el.querySelector(".agent-text").textContent += event.text;
           break;
         }
         case "agent_done": {
-          const el = ensureAgent(event.round, event.agent);
+          const el = ensureAgent(activeTurn, event.round, event.agent);
           el.classList.remove("streaming");
           break;
         }
         case "synthesis_start":
-          ensureSynthesis();
+          ensureSynthesis(activeTurn);
           break;
         case "synthesis_delta": {
-          const el = ensureSynthesis();
+          const el = ensureSynthesis(activeTurn);
           el.querySelector(".agent-text").textContent += event.text;
           break;
         }
         case "done": {
-          const synth = document.getElementById("synthesis");
+          const synth = activeTurn.querySelector(".synthesis");
           if (synth) synth.classList.remove("streaming");
           break;
         }
+        case "title_updated":
+          loadConversations();
+          break;
         case "error":
           showError(event.message);
           break;
       }
     }
+
+    // ---------- Boot ----------
+
+    (async function init() {
+      renderEmptyState();
+      await loadConversations();
+      questionInput.focus();
+    })();
   </script>
 </body>
 </html>
