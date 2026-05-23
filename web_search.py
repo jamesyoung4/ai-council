@@ -3,7 +3,7 @@ import os
 import httpx
 
 TAVILY_URL = "https://api.tavily.com/search"
-MAX_RESULTS = 5
+MAX_RESULTS = 10
 TIMEOUT_SECONDS = 30.0
 
 
