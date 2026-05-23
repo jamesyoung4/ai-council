@@ -15,9 +15,9 @@
       --subtle: #27272a;
       --border: #27272a;
       --border-strong: #3f3f46;
-      --pragmatist: #60a5fa;
-      --skeptic: #f87171;
-      --theorist: #a78bfa;
+      --slot-0: #60a5fa;
+      --slot-1: #f87171;
+      --slot-2: #a78bfa;
       --synth: #34d399;
     }
     * { box-sizing: border-box; }
@@ -39,7 +39,6 @@
     @media (max-width: 720px) {
       .app { grid-template-columns: 1fr; }
       .sidebar { display: none; }
-      .sidebar.open { display: flex; position: absolute; inset: 0; width: 280px; z-index: 10; }
     }
 
     /* Sidebar */
@@ -117,7 +116,7 @@
       border-radius: 4px;
     }
     .conv-item:hover .conv-delete { opacity: 1; }
-    .conv-delete:hover { color: var(--skeptic); background: rgba(248, 113, 113, 0.1); }
+    .conv-delete:hover { color: var(--slot-1); background: rgba(248, 113, 113, 0.1); }
     .empty-list {
       padding: 1rem 0.75rem;
       color: var(--muted);
@@ -147,8 +146,7 @@
       align-items: center;
       justify-content: center;
       height: 100%;
-      color: var(--muted);
-      gap: 0.5rem;
+      gap: 1rem;
       text-align: center;
     }
     .empty-state h2 {
@@ -158,7 +156,48 @@
       font-weight: 700;
       letter-spacing: -0.02em;
     }
-    .empty-state p { margin: 0; font-size: 0.95rem; max-width: 30rem; }
+    .empty-state p {
+      margin: 0;
+      font-size: 0.95rem;
+      max-width: 30rem;
+      color: var(--muted);
+    }
+    .empty-state .council-summary {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+      padding: 0.55rem 0.85rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 0.85rem;
+    }
+    .council-summary .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .council-summary .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      flex: 0 0 auto;
+    }
+    .council-summary .dot.slot-0 { background: var(--slot-0); }
+    .council-summary .dot.slot-1 { background: var(--slot-1); }
+    .council-summary .dot.slot-2 { background: var(--slot-2); }
+    .council-summary .sep { color: var(--border-strong); }
+    .customize-btn {
+      background: transparent;
+      border: 1px solid var(--border-strong);
+      color: var(--fg);
+      font-family: inherit;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.85rem;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 100ms ease;
+    }
+    .customize-btn:hover { background: var(--surface); }
 
     .turn { margin-bottom: 2.5rem; animation: slideIn 280ms ease; }
     @keyframes slideIn {
@@ -239,9 +278,9 @@
       border-top-left-radius: 10px;
       border-top-right-radius: 10px;
     }
-    .agent.Pragmatist::before { background: var(--pragmatist); }
-    .agent.Skeptic::before { background: var(--skeptic); }
-    .agent.Theorist::before { background: var(--theorist); }
+    .agent[data-slot="0"]::before { background: var(--slot-0); }
+    .agent[data-slot="1"]::before { background: var(--slot-1); }
+    .agent[data-slot="2"]::before { background: var(--slot-2); }
     .agent.streaming { background: var(--surface-hi); border-color: var(--border-strong); }
     .agent-name {
       display: inline-block;
@@ -251,15 +290,16 @@
       text-transform: uppercase;
       margin-bottom: 0.5rem;
     }
-    .agent.Pragmatist .agent-name { color: var(--pragmatist); }
-    .agent.Skeptic .agent-name { color: var(--skeptic); }
-    .agent.Theorist .agent-name { color: var(--theorist); }
+    .agent[data-slot="0"] .agent-name { color: var(--slot-0); }
+    .agent[data-slot="1"] .agent-name { color: var(--slot-1); }
+    .agent[data-slot="2"] .agent-name { color: var(--slot-2); }
     .agent-text {
       white-space: pre-wrap;
       font-size: 0.9rem;
       line-height: 1.55;
       color: #e4e4e7;
     }
+    .agent-text.markdown { white-space: normal; }
     .agent-text:empty::before {
       content: "thinking…";
       color: var(--muted);
@@ -275,9 +315,9 @@
       vertical-align: text-bottom;
       animation: blink 0.95s steps(2, end) infinite;
     }
-    .agent.Pragmatist.streaming .agent-text::after { background: var(--pragmatist); }
-    .agent.Skeptic.streaming .agent-text::after { background: var(--skeptic); }
-    .agent.Theorist.streaming .agent-text::after { background: var(--theorist); }
+    .agent.streaming[data-slot="0"] .agent-text::after { background: var(--slot-0); }
+    .agent.streaming[data-slot="1"] .agent-text::after { background: var(--slot-1); }
+    .agent.streaming[data-slot="2"] .agent-text::after { background: var(--slot-2); }
     @keyframes blink { 50% { opacity: 0; } }
 
     .synthesis {
@@ -316,6 +356,83 @@
       vertical-align: text-bottom;
       animation: blink 0.95s steps(2, end) infinite;
     }
+
+    /* Markdown styles inside agent-text/synthesis */
+    .agent-text.markdown > *:first-child { margin-top: 0; }
+    .agent-text.markdown > *:last-child { margin-bottom: 0; }
+    .agent-text.markdown p { margin: 0.5em 0; }
+    .agent-text.markdown strong { font-weight: 600; color: #f4f4f5; }
+    .agent-text.markdown em { font-style: italic; }
+    .agent-text.markdown code {
+      font-family: ui-monospace, "SF Mono", Menlo, Monaco, monospace;
+      font-size: 0.88em;
+      background: rgba(255,255,255,0.07);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    .agent-text.markdown pre {
+      background: #0a0a0b;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.7em 0.85em;
+      overflow-x: auto;
+      font-size: 0.85em;
+      margin: 0.6em 0;
+    }
+    .agent-text.markdown pre code {
+      background: none;
+      padding: 0;
+      font-size: 1em;
+    }
+    .agent-text.markdown h1,
+    .agent-text.markdown h2,
+    .agent-text.markdown h3,
+    .agent-text.markdown h4 {
+      margin: 0.8em 0 0.35em;
+      font-weight: 600;
+      line-height: 1.25;
+      letter-spacing: -0.005em;
+    }
+    .agent-text.markdown h1 { font-size: 1.15em; }
+    .agent-text.markdown h2 { font-size: 1.08em; }
+    .agent-text.markdown h3 { font-size: 1.02em; }
+    .agent-text.markdown h4 { font-size: 0.98em; color: var(--muted); }
+    .agent-text.markdown ul,
+    .agent-text.markdown ol {
+      margin: 0.4em 0;
+      padding-left: 1.25em;
+    }
+    .agent-text.markdown li { margin: 0.2em 0; }
+    .agent-text.markdown li > p { margin: 0; }
+    .agent-text.markdown blockquote {
+      border-left: 3px solid var(--border-strong);
+      padding-left: 0.85em;
+      margin: 0.5em 0;
+      color: var(--muted);
+    }
+    .agent-text.markdown hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1em 0;
+    }
+    .agent-text.markdown a {
+      color: var(--slot-0);
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 2px;
+    }
+    .agent-text.markdown table {
+      border-collapse: collapse;
+      margin: 0.6em 0;
+      font-size: 0.88em;
+    }
+    .agent-text.markdown th,
+    .agent-text.markdown td {
+      border: 1px solid var(--border);
+      padding: 0.35em 0.6em;
+      text-align: left;
+    }
+    .agent-text.markdown th { background: var(--subtle); font-weight: 600; }
 
     /* Input bar */
     .input-bar {
@@ -419,6 +536,20 @@
     .send-btn:active:not(:disabled) { transform: translateY(1px); }
     .send-btn:disabled { opacity: 0.55; cursor: progress; }
 
+    .ghost-btn {
+      padding: 0.55rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      font-family: inherit;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--fg);
+      cursor: pointer;
+      transition: background 100ms ease;
+    }
+    .ghost-btn:hover { background: var(--surface); }
+
     .error {
       margin: 1rem 0;
       padding: 0.75rem 1rem;
@@ -429,6 +560,127 @@
       color: #fca5a5;
       font-size: 0.9rem;
     }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      animation: fadeIn 160ms ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal-backdrop[hidden] { display: none; }
+    .modal {
+      width: 100%;
+      max-width: 640px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 14px;
+      overflow: hidden;
+      animation: modalIn 200ms ease;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: translateY(8px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem 0.5rem;
+    }
+    .modal-header h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin: 0;
+    }
+    .modal-body {
+      padding: 0.25rem 1.25rem 0.5rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      padding: 0.85rem 1.25rem 1.1rem;
+      border-top: 1px solid var(--border);
+    }
+    .preset-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 0 0.75rem;
+    }
+    .preset-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-right: 0.25rem;
+    }
+    .preset-chip {
+      font-size: 0.82rem;
+      padding: 0.3rem 0.7rem;
+      background: var(--subtle);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--fg);
+      cursor: pointer;
+      transition: background 100ms ease;
+    }
+    .preset-chip:hover { background: var(--surface-hi); }
+    .persona-row {
+      padding: 0.75rem 0;
+      border-top: 1px solid var(--border);
+    }
+    .persona-row:first-child { border-top: none; }
+    .persona-row label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.3rem;
+    }
+    .persona-row .name-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.4rem;
+    }
+    .persona-row .name-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      flex: 0 0 auto;
+    }
+    .persona-row[data-slot="0"] .name-dot { background: var(--slot-0); }
+    .persona-row[data-slot="1"] .name-dot { background: var(--slot-1); }
+    .persona-row[data-slot="2"] .name-dot { background: var(--slot-2); }
+    .persona-row input[type="text"],
+    .persona-row textarea {
+      width: 100%;
+      padding: 0.5rem 0.7rem;
+      font-family: inherit;
+      font-size: 0.9rem;
+      background: var(--bg);
+      color: var(--fg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      resize: vertical;
+    }
+    .persona-row input[type="text"]:focus,
+    .persona-row textarea:focus { outline: none; border-color: var(--border-strong); }
+    .persona-row textarea { min-height: 70px; }
   </style>
 </head>
 <body>
@@ -482,7 +734,68 @@
     </main>
   </div>
 
+  <!-- Council setup modal -->
+  <div class="modal-backdrop" id="council-modal" hidden>
+    <div class="modal" role="dialog" aria-label="Set the council">
+      <div class="modal-header">
+        <h2>Set the council</h2>
+        <button class="icon-btn" id="modal-close" title="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="preset-row">
+          <span class="preset-label">Preset</span>
+          <div class="preset-chips" id="preset-chips"></div>
+        </div>
+        <div id="persona-editor"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="ghost-btn" id="modal-cancel">Cancel</button>
+        <button class="send-btn" id="modal-save">Save council</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
   <script>
+    // ---------- Presets ----------
+
+    const PRESETS = {
+      Default: [
+        { name: "Pragmatist", system: "You are the Pragmatist on a three-member deliberation council. You focus on what actually works in practice — concrete examples, real-world constraints, battle-tested approaches. You're skeptical of theoretical purity that ignores implementation realities. Keep your answers grounded and specific. Avoid hedging; commit to a position." },
+        { name: "Skeptic", system: "You are the Skeptic on a three-member deliberation council. You question assumptions and look for flaws in reasoning. You search for counterexamples, hidden costs, edge cases, and unstated premises. You push back when others are too confident — but you're not a contrarian for sport. Your dissent should illuminate. When you find a real weakness, name it precisely." },
+        { name: "Theorist", system: "You are the Theorist on a three-member deliberation council. You think in principles, frameworks, and first principles. You're drawn to underlying structure and connect specific cases to general patterns. Don't get lost in pure abstraction — ground your principles in the concrete question. Name the framework you're using; don't smuggle it in." },
+      ],
+      "Tech review": [
+        { name: "Architect", system: "You are the Architect on a three-member technical council. You think about system design, boundaries, abstractions, and how the pieces will fit together long-term. You care about clean interfaces and avoiding bad coupling, but you're not allergic to pragmatic shortcuts when the abstraction isn't earning its keep. Name the design forces you see." },
+        { name: "Performance", system: "You are the Performance reviewer on a three-member technical council. You think about latency, throughput, memory, allocations, and how the system behaves at the edges of scale. You're suspicious of code that looks elegant but blows up under load. Don't optimize prematurely — but when there's a real performance smell, call it precisely." },
+        { name: "Maintainer", system: "You are the Maintainer on a three-member technical council. You think about the engineer who'll read this code in 18 months without context. You care about clarity, naming, testability, observability, and the cost of changes. You push back on cleverness for its own sake. Boring code that's easy to delete is usually right." },
+      ],
+      Product: [
+        { name: "User", system: "You are the User on a three-member product council. You represent the person who will actually use this. You think about goals, friction, mental models, and what will feel right vs. what will feel like a chore. You're allergic to features designed for engineers, not for users. Speak from the user's perspective — what's confusing, what's missing, what's overkill." },
+        { name: "Engineer", system: "You are the Engineer on a three-member product council. You think about feasibility, complexity, edge cases, and the second-order costs of features (maintenance, infrastructure, support). You're not a no-person — you find the cheapest version of the thing that actually works. Call out when product asks have hidden engineering icebergs." },
+        { name: "Designer", system: "You are the Designer on a three-member product council. You think about hierarchy, affordance, rhythm, and whether the experience feels coherent. You care about both how it looks and how it works. You push back on features that fragment the design language or add visual noise. Be specific about why something works or doesn't." },
+      ],
+      Decision: [
+        { name: "Bull", system: "You are the Bull on a three-member decision-making council. Your job is to make the strongest possible case FOR taking the action. You see the upside, the asymmetric opportunity, the cost of inaction. You're not naive — you acknowledge real risks — but you forcefully advocate for the option. If the case isn't strong, say so honestly; don't manufacture optimism." },
+        { name: "Bear", system: "You are the Bear on a three-member decision-making council. Your job is to make the strongest possible case AGAINST taking the action. You see the downside, the failure modes, the costs that aren't being counted. You're not a pure naysayer — you acknowledge real upside — but you forcefully advocate against the option. If the case for caution is weak, say so honestly." },
+        { name: "Strategist", system: "You are the Strategist on a three-member decision-making council. You think about long-horizon effects, second-order consequences, opportunity cost, and how this decision interacts with other decisions. You're not Bull or Bear — you're trying to see the full board. Name the strategic trade-offs explicitly; surface what's being optimized for and what's being sacrificed." },
+      ],
+      Writing: [
+        { name: "Editor", system: "You are the Editor on a three-member writing council. You focus on structure, clarity, and pacing. You cut what doesn't earn its place. You push for stronger verbs, tighter sentences, clearer arguments. You're not pedantic — you serve the meaning, not the rules. When something works, say why; when it doesn't, suggest a fix." },
+        { name: "Storyteller", system: "You are the Storyteller on a three-member writing council. You focus on voice, momentum, and emotional truth. You think about what will land with a reader — what surprises them, what stays with them. You push back when writing is technically correct but lifeless. Name the moments that work and the moments that go flat." },
+        { name: "Critic", system: "You are the Critic on a three-member writing council. You read for what's actually being claimed and whether it holds up. You probe weak arguments, unsupported assertions, and rhetorical sleight of hand. You're not hostile — you're honest. Distinguish style problems from substance problems. When the writing is hiding behind craft, say so." },
+      ],
+    };
+
+    let DEFAULT_PERSONAS = PRESETS.Default;  // overridden by /api/personas/default on boot
+
+    // ---------- DOM refs ----------
+
     const conversationView = document.getElementById("conversation");
     const convList = document.getElementById("conv-list");
     const form = document.getElementById("form");
@@ -492,11 +805,46 @@
     const attachBtn = document.getElementById("attach-btn");
     const fileInput = document.getElementById("file-input");
     const pendingFilesEl = document.getElementById("pending-files");
+    const modal = document.getElementById("council-modal");
+    const modalClose = document.getElementById("modal-close");
+    const modalCancel = document.getElementById("modal-cancel");
+    const modalSave = document.getElementById("modal-save");
+    const presetChipsEl = document.getElementById("preset-chips");
+    const personaEditorEl = document.getElementById("persona-editor");
+
+    // ---------- State ----------
 
     let currentConversationId = null;
+    let currentPersonas = DEFAULT_PERSONAS;
     let pendingFiles = [];
     let activeTurn = null;
     let isStreaming = false;
+    let modalDraft = null;  // personas being edited in the modal
+
+    // ---------- Helpers ----------
+
+    function escapeHtml(s) {
+      return s.replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+      })[c]);
+    }
+
+    function slotForAgent(personas, agentName) {
+      const i = personas.findIndex((p) => p.name === agentName);
+      return i === -1 ? 0 : i;
+    }
+
+    function renderMarkdown(el) {
+      const text = el.textContent;
+      if (!text.trim()) return;
+      try {
+        const html = DOMPurify.sanitize(marked.parse(text, { breaks: true }));
+        el.innerHTML = html;
+        el.classList.add("markdown");
+      } catch (e) {
+        // fall back to plain text — already textContent
+      }
+    }
 
     // ---------- Sidebar ----------
 
@@ -523,6 +871,7 @@
           await fetch(`/api/conversations/${c.id}`, { method: "DELETE" });
           if (currentConversationId === c.id) {
             currentConversationId = null;
+            currentPersonas = DEFAULT_PERSONAS;
             renderEmptyState();
           }
           await loadConversations();
@@ -537,6 +886,7 @@
       if (!resp.ok) return;
       const conv = await resp.json();
       currentConversationId = id;
+      currentPersonas = conv.personas && conv.personas.length === 3 ? conv.personas : DEFAULT_PERSONAS;
       conversationView.innerHTML = "";
       for (const turn of conv.turns) renderTurn(turn);
       conversationView.scrollTop = conversationView.scrollHeight;
@@ -546,6 +896,7 @@
     function newConversation() {
       if (isStreaming) return;
       currentConversationId = null;
+      currentPersonas = DEFAULT_PERSONAS;
       activeTurn = null;
       pendingFiles = [];
       renderPendingFiles();
@@ -557,24 +908,125 @@
 
     newBtn.addEventListener("click", newConversation);
 
-    // ---------- Rendering ----------
+    // ---------- Empty state with council summary + customize ----------
 
     function renderEmptyState() {
+      const pills = currentPersonas.map((p, i) =>
+        `<span class="pill"><span class="dot slot-${i}"></span>${escapeHtml(p.name)}</span>`
+      ).join('<span class="sep">·</span>');
       conversationView.innerHTML = `
         <div class="empty-state">
           <h2>Convene the council</h2>
-          <p>Ask a question worth deliberating on. Three AI minds will give independent
+          <p>Ask a question worth deliberating on. Three minds will give independent
              opening takes, critique each other across two rounds, then a fourth produces
              a synthesis. Attach files for context.</p>
+          <div class="council-summary">${pills}</div>
+          <button class="customize-btn" id="customize-btn">Customize council</button>
         </div>
       `;
+      document.getElementById("customize-btn").addEventListener("click", openModal);
     }
 
-    function escapeHtml(s) {
-      return s.replace(/[&<>"']/g, (c) => ({
-        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-      })[c]);
+    // ---------- Modal ----------
+
+    function openModal() {
+      modalDraft = currentPersonas.map((p) => ({ ...p }));
+      renderPresetChips();
+      renderPersonaEditor();
+      modal.hidden = false;
     }
+
+    function closeModal() {
+      modal.hidden = true;
+      modalDraft = null;
+    }
+
+    function renderPresetChips() {
+      presetChipsEl.innerHTML = "";
+      for (const presetName of Object.keys(PRESETS)) {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "preset-chip";
+        chip.textContent = presetName;
+        chip.addEventListener("click", () => {
+          modalDraft = PRESETS[presetName].map((p) => ({ ...p }));
+          renderPersonaEditor();
+        });
+        presetChipsEl.appendChild(chip);
+      }
+    }
+
+    function renderPersonaEditor() {
+      personaEditorEl.innerHTML = "";
+      modalDraft.forEach((p, i) => {
+        const row = document.createElement("div");
+        row.className = "persona-row";
+        row.dataset.slot = i;
+        row.innerHTML = `
+          <div class="name-row">
+            <span class="name-dot"></span>
+            <input type="text" data-field="name" placeholder="Name" maxlength="60" />
+          </div>
+          <label>Personality / system prompt</label>
+          <textarea data-field="system" rows="3" placeholder="Describe how this council member thinks…"></textarea>
+        `;
+        row.querySelector('[data-field="name"]').value = p.name;
+        row.querySelector('[data-field="system"]').value = p.system;
+        row.querySelector('[data-field="name"]').addEventListener("input", (e) => {
+          modalDraft[i].name = e.target.value;
+        });
+        row.querySelector('[data-field="system"]').addEventListener("input", (e) => {
+          modalDraft[i].system = e.target.value;
+        });
+        personaEditorEl.appendChild(row);
+      });
+    }
+
+    async function saveModal() {
+      // Trim
+      const cleaned = modalDraft.map((p) => ({
+        name: (p.name || "").trim(),
+        system: (p.system || "").trim(),
+      }));
+      // Validate
+      for (const p of cleaned) {
+        if (!p.name || !p.system) {
+          alert("Each council member needs a name and a system prompt.");
+          return;
+        }
+      }
+      const names = cleaned.map((p) => p.name);
+      if (new Set(names).size !== 3) {
+        alert("Council member names must be unique.");
+        return;
+      }
+      // If conversation exists, PATCH (server rejects if any turns exist)
+      if (currentConversationId !== null) {
+        const r = await fetch(`/api/conversations/${currentConversationId}/personas`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ personas: cleaned }),
+        });
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({ detail: `HTTP ${r.status}` }));
+          alert(`Could not update council: ${err.detail}`);
+          return;
+        }
+      }
+      currentPersonas = cleaned;
+      closeModal();
+      if (!conversationView.querySelector(".turn")) renderEmptyState();
+    }
+
+    modalClose.addEventListener("click", closeModal);
+    modalCancel.addEventListener("click", closeModal);
+    modalSave.addEventListener("click", saveModal);
+    modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !modal.hidden) closeModal();
+    });
+
+    // ---------- Turn rendering ----------
 
     function newTurnEl() {
       const el = document.createElement("section");
@@ -628,14 +1080,16 @@
       return grid;
     }
 
-    function ensureAgent(turnEl, roundNum, agentName) {
+    function ensureAgent(turnEl, roundNum, agentName, slot) {
       const grid = ensureRound(turnEl, roundNum);
-      let el = grid.querySelector(`[data-agent="${agentName}"]`);
+      let el = grid.querySelector(`[data-agent="${CSS.escape(agentName)}"]`);
       if (el) return el;
       el = document.createElement("article");
       el.dataset.agent = agentName;
-      el.className = `agent ${agentName}`;
-      el.innerHTML = `<div class="agent-name">${agentName}</div><div class="agent-text"></div>`;
+      el.dataset.slot = slot;
+      el.className = "agent";
+      el.innerHTML = `<div class="agent-name"></div><div class="agent-text"></div>`;
+      el.querySelector(".agent-name").textContent = agentName;
       grid.appendChild(el);
       return el;
     }
@@ -662,14 +1116,18 @@
       const rounds = turn.responses || {};
       for (const [r, agents] of Object.entries(rounds)) {
         for (const [name, text] of Object.entries(agents)) {
-          const a = ensureAgent(el, parseInt(r), name);
+          const slot = slotForAgent(currentPersonas, name);
+          const a = ensureAgent(el, parseInt(r), name, slot);
           a.querySelector(".agent-text").textContent = text;
+          renderMarkdown(a.querySelector(".agent-text"));
         }
       }
       if (turn.synthesis) {
         const s = ensureSynthesis(el);
         s.classList.remove("streaming");
-        s.querySelector(".agent-text").textContent = turn.synthesis;
+        const txt = s.querySelector(".agent-text");
+        txt.textContent = turn.synthesis;
+        renderMarkdown(txt);
       }
       conversationView.appendChild(el);
       return el;
@@ -689,7 +1147,9 @@
       pendingFiles.forEach((f, i) => {
         const chip = document.createElement("span");
         chip.className = "pending-chip";
-        chip.innerHTML = `<span>${escapeHtml(f.name)}</span>`;
+        const label = document.createElement("span");
+        label.textContent = f.name;
+        chip.appendChild(label);
         const btn = document.createElement("button");
         btn.type = "button";
         btn.textContent = "×";
@@ -729,24 +1189,25 @@
       const question = questionInput.value.trim();
       if (!question || isStreaming) return;
 
-      // Clear empty state if present
       const empty = conversationView.querySelector(".empty-state");
       if (empty) empty.remove();
 
-      // Create conversation if needed
       if (!currentConversationId) {
-        const r = await fetch("/api/conversations", { method: "POST" });
-        const { id } = await r.json();
-        currentConversationId = id;
+        const r = await fetch("/api/conversations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ personas: currentPersonas }),
+        });
+        const data = await r.json();
+        currentConversationId = data.id;
+        if (data.personas) currentPersonas = data.personas;
       }
 
-      // Render user message + new active turn
       activeTurn = newTurnEl();
       renderUserMessage(activeTurn, question, pendingFiles.map((f) => ({ filename: f.name })));
       conversationView.appendChild(activeTurn);
       conversationView.scrollTop = conversationView.scrollHeight;
 
-      // Reset inputs
       const filesToSend = pendingFiles;
       pendingFiles = [];
       renderPendingFiles();
@@ -810,18 +1271,18 @@
       if (!activeTurn) return;
       switch (event.type) {
         case "agent_start": {
-          const el = ensureAgent(activeTurn, event.round, event.agent);
-          el.classList.add("streaming");
+          ensureAgent(activeTurn, event.round, event.agent, event.slot ?? 0).classList.add("streaming");
           break;
         }
         case "agent_delta": {
-          const el = ensureAgent(activeTurn, event.round, event.agent);
+          const el = ensureAgent(activeTurn, event.round, event.agent, event.slot ?? 0);
           el.querySelector(".agent-text").textContent += event.text;
           break;
         }
         case "agent_done": {
-          const el = ensureAgent(activeTurn, event.round, event.agent);
+          const el = ensureAgent(activeTurn, event.round, event.agent, event.slot ?? 0);
           el.classList.remove("streaming");
+          renderMarkdown(el.querySelector(".agent-text"));
           break;
         }
         case "synthesis_start":
@@ -834,7 +1295,10 @@
         }
         case "done": {
           const synth = activeTurn.querySelector(".synthesis");
-          if (synth) synth.classList.remove("streaming");
+          if (synth) {
+            synth.classList.remove("streaming");
+            renderMarkdown(synth.querySelector(".agent-text"));
+          }
           break;
         }
         case "title_updated":
@@ -849,6 +1313,17 @@
     // ---------- Boot ----------
 
     (async function init() {
+      try {
+        const r = await fetch("/api/personas/default");
+        if (r.ok) {
+          const d = await r.json();
+          if (Array.isArray(d) && d.length === 3) {
+            DEFAULT_PERSONAS = d;
+            currentPersonas = DEFAULT_PERSONAS;
+            PRESETS.Default = DEFAULT_PERSONAS;
+          }
+        }
+      } catch (e) {}
       renderEmptyState();
       await loadConversations();
       questionInput.focus();

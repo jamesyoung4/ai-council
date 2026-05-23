@@ -12,31 +12,49 @@ MAX_TOKENS = 4096
 NUM_CRITIQUE_ROUNDS = 2
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 
-PERSONAS = {
-    "Pragmatist": (
-        "You are the Pragmatist on a three-member deliberation council. "
-        "You focus on what actually works in practice — concrete examples, real-world "
-        "constraints, battle-tested approaches. You're skeptical of theoretical purity "
-        "that ignores implementation realities. Keep your answers grounded and specific. "
-        "Avoid hedging; commit to a position."
-    ),
-    "Skeptic": (
-        "You are the Skeptic on a three-member deliberation council. "
-        "You question assumptions and look for flaws in reasoning. You search for "
-        "counterexamples, hidden costs, edge cases, and unstated premises. You push back "
-        "when others are too confident — but you're not a contrarian for sport. Your dissent "
-        "should illuminate. When you find a real weakness, name it precisely."
-    ),
-    "Theorist": (
-        "You are the Theorist on a three-member deliberation council. "
-        "You think in principles, frameworks, and first principles. You're drawn to "
-        "underlying structure and connect specific cases to general patterns. Don't get "
-        "lost in pure abstraction — ground your principles in the concrete question. "
-        "Name the framework you're using; don't smuggle it in."
-    ),
-}
+DEFAULT_PERSONAS: list[dict] = [
+    {
+        "name": "Pragmatist",
+        "system": (
+            "You are the Pragmatist on a three-member deliberation council. "
+            "You focus on what actually works in practice — concrete examples, real-world "
+            "constraints, battle-tested approaches. You're skeptical of theoretical purity "
+            "that ignores implementation realities. Keep your answers grounded and specific. "
+            "Avoid hedging; commit to a position."
+        ),
+    },
+    {
+        "name": "Skeptic",
+        "system": (
+            "You are the Skeptic on a three-member deliberation council. "
+            "You question assumptions and look for flaws in reasoning. You search for "
+            "counterexamples, hidden costs, edge cases, and unstated premises. You push back "
+            "when others are too confident — but you're not a contrarian for sport. Your dissent "
+            "should illuminate. When you find a real weakness, name it precisely."
+        ),
+    },
+    {
+        "name": "Theorist",
+        "system": (
+            "You are the Theorist on a three-member deliberation council. "
+            "You think in principles, frameworks, and first principles. You're drawn to "
+            "underlying structure and connect specific cases to general patterns. Don't get "
+            "lost in pure abstraction — ground your principles in the concrete question. "
+            "Name the framework you're using; don't smuggle it in."
+        ),
+    },
+]
 
-AGENT_NAMES = list(PERSONAS.keys())
+
+def resolve_personas(stored: list[dict]) -> list[dict]:
+    """Use stored personas if 3 are present and well-formed; otherwise fall back to defaults."""
+    if (
+        isinstance(stored, list)
+        and len(stored) == 3
+        and all(isinstance(p, dict) and p.get("name") and p.get("system") for p in stored)
+    ):
+        return stored
+    return DEFAULT_PERSONAS
 
 SYNTH_SYSTEM = (
     "You are a neutral synthesizer reading a deliberation transcript. "
@@ -168,12 +186,15 @@ def _make_title(question: str, max_len: int = 60) -> str:
 async def _stream_agent(
     client: AsyncOpenAI,
     agent_name: str,
+    slot: int,
     system: str,
     user_msg: str,
     round_num: int,
     queue: asyncio.Queue,
 ) -> tuple[str, str]:
-    await queue.put({"type": "agent_start", "agent": agent_name, "round": round_num})
+    await queue.put(
+        {"type": "agent_start", "agent": agent_name, "slot": slot, "round": round_num}
+    )
     chunks: list[str] = []
     stream = await client.chat.completions.create(
         model=MODEL,
@@ -191,21 +212,40 @@ async def _stream_agent(
         if delta:
             chunks.append(delta)
             await queue.put(
-                {"type": "agent_delta", "agent": agent_name, "round": round_num, "text": delta}
+                {
+                    "type": "agent_delta",
+                    "agent": agent_name,
+                    "slot": slot,
+                    "round": round_num,
+                    "text": delta,
+                }
             )
-    await queue.put({"type": "agent_done", "agent": agent_name, "round": round_num})
+    await queue.put(
+        {"type": "agent_done", "agent": agent_name, "slot": slot, "round": round_num}
+    )
     return agent_name, "".join(chunks)
 
 
 async def _run_round(
     client: AsyncOpenAI,
     round_num: int,
-    prompts: dict[str, tuple[str, str]],
+    personas: list[dict],
+    user_msg_for: dict[str, str],
     queue: asyncio.Queue,
 ) -> dict[str, str]:
     tasks = [
-        asyncio.create_task(_stream_agent(client, name, system, user_msg, round_num, queue))
-        for name, (system, user_msg) in prompts.items()
+        asyncio.create_task(
+            _stream_agent(
+                client,
+                p["name"],
+                slot,
+                p["system"],
+                user_msg_for[p["name"]],
+                round_num,
+                queue,
+            )
+        )
+        for slot, p in enumerate(personas)
     ]
     results = await asyncio.gather(*tasks)
     return dict(results)
@@ -221,31 +261,26 @@ async def run_council(
     queue: asyncio.Queue = asyncio.Queue()
     history = db.get_history(conversation_id)
     is_first_turn = len(history) == 0
+    personas = resolve_personas(db.get_personas(conversation_id))
 
     async def producer() -> None:
         synthesis_chunks: list[str] = []
         try:
             rounds: dict[int, dict[str, str]] = {}
 
-            opening_prompts = {
-                name: (
-                    PERSONAS[name],
-                    _build_opening_prompt(history, attachments, question),
-                )
-                for name in AGENT_NAMES
-            }
-            rounds[0] = await _run_round(client, 0, opening_prompts, queue)
+            opening_user_msg = _build_opening_prompt(history, attachments, question)
+            opening_msg_by_name = {p["name"]: opening_user_msg for p in personas}
+            rounds[0] = await _run_round(client, 0, personas, opening_msg_by_name, queue)
             await queue.put({"type": "round_complete", "round": 0})
 
             for r in range(1, NUM_CRITIQUE_ROUNDS + 1):
-                critique_prompts = {
-                    name: (
-                        PERSONAS[name],
-                        _build_critique_prompt(history, attachments, question, rounds, name),
+                critique_msg_by_name = {
+                    p["name"]: _build_critique_prompt(
+                        history, attachments, question, rounds, p["name"]
                     )
-                    for name in AGENT_NAMES
+                    for p in personas
                 }
-                rounds[r] = await _run_round(client, r, critique_prompts, queue)
+                rounds[r] = await _run_round(client, r, personas, critique_msg_by_name, queue)
                 await queue.put({"type": "round_complete", "round": r})
 
             await queue.put({"type": "synthesis_start"})

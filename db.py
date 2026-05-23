@@ -10,6 +10,7 @@ SCHEMA = """
 CREATE TABLE IF NOT EXISTS conversations (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   title TEXT NOT NULL DEFAULT 'New conversation',
+  personas_json TEXT NOT NULL DEFAULT '[]',
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -45,6 +46,12 @@ def init_db() -> None:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     with connect() as conn:
         conn.executescript(SCHEMA)
+        # Migration: add personas_json to pre-existing conversations tables
+        cols = {row[1] for row in conn.execute("PRAGMA table_info(conversations)")}
+        if "personas_json" not in cols:
+            conn.execute(
+                "ALTER TABLE conversations ADD COLUMN personas_json TEXT NOT NULL DEFAULT '[]'"
+            )
 
 
 def list_conversations() -> list[dict]:
@@ -60,14 +67,20 @@ def list_conversations() -> list[dict]:
         return [dict(r) for r in rows]
 
 
-def create_conversation(title: str = "New conversation") -> int:
+def create_conversation(
+    title: str = "New conversation",
+    personas: list[dict] | None = None,
+) -> int:
     with connect() as conn:
-        cur = conn.execute("INSERT INTO conversations (title) VALUES (?)", (title,))
+        cur = conn.execute(
+            "INSERT INTO conversations (title, personas_json) VALUES (?, ?)",
+            (title, json.dumps(personas or [])),
+        )
         return cur.lastrowid
 
 
 def get_conversation(conv_id: int) -> dict | None:
-    """Return the full conversation with all turns (attachments redacted to metadata only for the UI)."""
+    """Return the full conversation with all turns (attachments metadata only)."""
     with connect() as conn:
         conv = conn.execute(
             "SELECT * FROM conversations WHERE id = ?", (conv_id,)
@@ -81,8 +94,10 @@ def get_conversation(conv_id: int) -> dict | None:
         return {
             "id": conv["id"],
             "title": conv["title"],
+            "personas": json.loads(conv["personas_json"] or "[]"),
             "created_at": conv["created_at"],
             "updated_at": conv["updated_at"],
+            "turn_count": len(turns),
             "turns": [
                 {
                     "id": t["id"],
@@ -95,6 +110,22 @@ def get_conversation(conv_id: int) -> dict | None:
                 for t in turns
             ],
         }
+
+
+def get_personas(conv_id: int) -> list[dict]:
+    with connect() as conn:
+        row = conn.execute(
+            "SELECT personas_json FROM conversations WHERE id = ?", (conv_id,)
+        ).fetchone()
+        return json.loads(row["personas_json"]) if row else []
+
+
+def update_personas(conv_id: int, personas: list[dict]) -> None:
+    with connect() as conn:
+        conn.execute(
+            "UPDATE conversations SET personas_json = ? WHERE id = ?",
+            (json.dumps(personas), conv_id),
+        )
 
 
 def get_history(conv_id: int) -> list[dict]:
@@ -113,6 +144,14 @@ def get_history(conv_id: int) -> list[dict]:
             }
             for t in turns
         ]
+
+
+def turn_count(conv_id: int) -> int:
+    with connect() as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) AS n FROM turns WHERE conversation_id = ?", (conv_id,)
+        ).fetchone()
+        return row["n"]
 
 
 def save_turn(
@@ -154,7 +193,6 @@ def delete_conversation(conv_id: int) -> None:
 
 
 def _strip_attachment_content(attachments: list[dict]) -> list[dict]:
-    """Don't ship full attachment text to the UI — only metadata."""
     return [
         {"filename": a.get("filename", "?"), "char_count": len(a.get("content", ""))}
         for a in attachments
