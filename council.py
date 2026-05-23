@@ -6,6 +6,7 @@ from typing import AsyncIterator
 from openai import AsyncOpenAI
 
 import db
+import web_search
 
 MODEL = "deepseek-chat"
 MAX_TOKENS = 4096
@@ -116,11 +117,17 @@ def _format_round_transcript(rounds: dict[int, dict[str, str]], current_agent: s
     return "".join(parts)
 
 
-def _build_opening_prompt(history: list[dict], attachments: list[dict], question: str) -> str:
+def _build_opening_prompt(
+    history: list[dict],
+    attachments: list[dict],
+    question: str,
+    web_context: str = "",
+) -> str:
     return (
         _format_prior_attachments(history)
         + _format_history(history)
         + _format_attachments(attachments)
+        + web_context
         + f"\n=== Current question ===\n\n{question}\n\n"
         + "Provide your independent answer to the current question. "
         + "Don't qualify it to death — commit to a position you can defend. "
@@ -138,11 +145,13 @@ def _build_critique_prompt(
     question: str,
     rounds: dict[int, dict[str, str]],
     current_agent: str,
+    web_context: str = "",
 ) -> str:
     return (
         _format_prior_attachments(history)
         + _format_history(history)
         + _format_attachments(attachments)
+        + web_context
         + f"\n=== Current question ===\n\n{question}\n"
         + _format_round_transcript(rounds, current_agent)
         + "\n\nNow: (1) critique the other council members' most recent positions — "
@@ -157,11 +166,13 @@ def _build_synth_prompt(
     attachments: list[dict],
     question: str,
     rounds: dict[int, dict[str, str]],
+    web_context: str = "",
 ) -> str:
     return (
         _format_prior_attachments(history)
         + _format_history(history)
         + _format_attachments(attachments)
+        + web_context
         + f"\n=== Current question ===\n\n{question}\n"
         + _format_round_transcript(rounds, current_agent=None)
         + "\n\nProduce a synthesis with three sections, in this order:\n\n"
@@ -255,6 +266,7 @@ async def run_council(
     conversation_id: int,
     question: str,
     attachments: list[dict],
+    use_web: bool = False,
 ) -> AsyncIterator[str]:
     """Stream the deliberation, then persist the turn. Yields SSE-formatted events."""
     client = _client()
@@ -265,10 +277,28 @@ async def run_council(
 
     async def producer() -> None:
         synthesis_chunks: list[str] = []
+        web_context = ""
+        web_succeeded = False
         try:
+            if use_web:
+                await queue.put({"type": "web_search_start", "query": question})
+                try:
+                    result = await web_search.search(question)
+                    web_context = web_search.format_for_prompt(question, result)
+                    web_succeeded = True
+                    await queue.put(
+                        {
+                            "type": "web_search_done",
+                            "query": question,
+                            "result_count": len(result.get("results", [])),
+                        }
+                    )
+                except web_search.WebSearchError as e:
+                    await queue.put({"type": "web_search_error", "message": str(e)})
+
             rounds: dict[int, dict[str, str]] = {}
 
-            opening_user_msg = _build_opening_prompt(history, attachments, question)
+            opening_user_msg = _build_opening_prompt(history, attachments, question, web_context)
             opening_msg_by_name = {p["name"]: opening_user_msg for p in personas}
             rounds[0] = await _run_round(client, 0, personas, opening_msg_by_name, queue)
             await queue.put({"type": "round_complete", "round": 0})
@@ -276,7 +306,7 @@ async def run_council(
             for r in range(1, NUM_CRITIQUE_ROUNDS + 1):
                 critique_msg_by_name = {
                     p["name"]: _build_critique_prompt(
-                        history, attachments, question, rounds, p["name"]
+                        history, attachments, question, rounds, p["name"], web_context
                     )
                     for p in personas
                 }
@@ -291,7 +321,9 @@ async def run_council(
                     {"role": "system", "content": SYNTH_SYSTEM},
                     {
                         "role": "user",
-                        "content": _build_synth_prompt(history, attachments, question, rounds),
+                        "content": _build_synth_prompt(
+                            history, attachments, question, rounds, web_context
+                        ),
                     },
                 ],
                 stream=True,
@@ -311,6 +343,8 @@ async def run_council(
                 attachments=attachments,
                 responses={str(r): rounds[r] for r in rounds},
                 synthesis=synthesis_text,
+                used_web=web_succeeded,
+                web_query=question if web_succeeded else "",
             )
             if is_first_turn:
                 title = _make_title(question)

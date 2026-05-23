@@ -116,6 +116,7 @@ async def delete_conversation(conv_id: int) -> JSONResponse:
 async def ask(
     conv_id: int,
     question: str = Form(...),
+    use_web: bool = Form(False),
     files: list[UploadFile] = File(default=[]),
 ) -> StreamingResponse:
     if db.get_conversation(conv_id) is None:
@@ -133,7 +134,7 @@ async def ask(
         extracted.append({"filename": f.filename, "content": text})
 
     return StreamingResponse(
-        run_council(conv_id, question, extracted),
+        run_council(conv_id, question, extracted, use_web=use_web),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )

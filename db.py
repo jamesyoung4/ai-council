@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS turns (
   attachments_json TEXT NOT NULL DEFAULT '[]',
   responses_json TEXT NOT NULL DEFAULT '{}',
   synthesis TEXT NOT NULL DEFAULT '',
+  used_web INTEGER NOT NULL DEFAULT 0,
+  web_query TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
 );
@@ -52,6 +54,11 @@ def init_db() -> None:
             conn.execute(
                 "ALTER TABLE conversations ADD COLUMN personas_json TEXT NOT NULL DEFAULT '[]'"
             )
+        turn_cols = {row[1] for row in conn.execute("PRAGMA table_info(turns)")}
+        if "used_web" not in turn_cols:
+            conn.execute("ALTER TABLE turns ADD COLUMN used_web INTEGER NOT NULL DEFAULT 0")
+        if "web_query" not in turn_cols:
+            conn.execute("ALTER TABLE turns ADD COLUMN web_query TEXT NOT NULL DEFAULT ''")
 
 
 def list_conversations() -> list[dict]:
@@ -105,6 +112,8 @@ def get_conversation(conv_id: int) -> dict | None:
                     "attachments": _strip_attachment_content(json.loads(t["attachments_json"])),
                     "responses": json.loads(t["responses_json"]),
                     "synthesis": t["synthesis"],
+                    "used_web": bool(t["used_web"]) if "used_web" in t.keys() else False,
+                    "web_query": t["web_query"] if "web_query" in t.keys() else "",
                     "created_at": t["created_at"],
                 }
                 for t in turns
@@ -160,13 +169,16 @@ def save_turn(
     attachments: list[dict],
     responses: dict,
     synthesis: str,
+    used_web: bool = False,
+    web_query: str = "",
 ) -> None:
     with connect() as conn:
         conn.execute(
             """
             INSERT INTO turns
-              (conversation_id, user_question, attachments_json, responses_json, synthesis)
-            VALUES (?, ?, ?, ?, ?)
+              (conversation_id, user_question, attachments_json, responses_json,
+               synthesis, used_web, web_query)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 conv_id,
@@ -174,6 +186,8 @@ def save_turn(
                 json.dumps(attachments),
                 json.dumps(responses),
                 synthesis,
+                1 if used_web else 0,
+                web_query,
             ),
         )
         conn.execute(
